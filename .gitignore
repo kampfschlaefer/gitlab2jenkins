@@ -1,2 +1,9 @@
 /.python-version
 /*.egg*
+/.coverage
+/coverage.xml
+/unittests.xml
+/build
+/htmlcov
+*.pyc
+__pycache__
