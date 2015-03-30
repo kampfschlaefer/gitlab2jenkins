@@ -5,7 +5,7 @@ import requests
 
 import gitlabtojenkins.handler
 
-from gitlabtojenkins.fake_jenkins import jenkins_app
+from .fake_jenkins import jenkins_app
 from gitlabtojenkins.server import application
 
 

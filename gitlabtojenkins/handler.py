@@ -114,7 +114,9 @@ def set_enabled(xml):
 
 def view_for_job(job):
     ''' Determine the view that the given job is in. '''
-    logging.debug('all views: %s', ', '.join(j.views))
+    print 'view_for_job(%s)' % job
+    # logging.debug('all views: %s', ', '.join(j.views))
+    return None
     for vname in j.views:
         if vname in ['All', 'Alle']:
             continue
@@ -136,9 +138,13 @@ def create_job(jobname, template, repo, branch, data):
     ''' Create a new job. '''
     global j
     cfg = gen_config(jobname, template, repo, branch, data)
+    logger.info('planning to create job with name %s and cfg %s', jobname, cfg)
     newjob = j.create_job(jobname, cfg)
+    logger.info('created job')
     refresh()
+    logger.info('refreshed')
     v = view_for_job(template)
+    logger.info('got view')
     if v:
         v.add_job(jobname, newjob)
     return newjob
@@ -167,8 +173,8 @@ def handler(data, start_response):  # req):
     r = repo(data)
     b = branch(data)
     refresh()
-    # all_jobs = j.get_jobs()
-    # all_views = j.views
+    all_jobs = j.get_jobs()
+    all_views = j.views
 
     if (
         not re.match(r'^r[0-9\.]+(|-s.+)$', b) and
