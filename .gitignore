@@ -4,6 +4,6 @@
 /coverage.xml
 /unittests.xml
 /build
-/htmlcov
+/covhtml
 *.pyc
 __pycache__
