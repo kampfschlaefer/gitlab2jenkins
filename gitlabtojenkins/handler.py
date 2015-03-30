@@ -1,4 +1,4 @@
-from mod_python import apache
+# from mod_python import apache
 # from mod_python import util
 
 from lxml import etree
@@ -10,22 +10,24 @@ import json
 import re
 
 import logging
-logging.basicConfig(
-    filename='/var/log/gitlab2jenkins/gitlab2jenkins.log',
-    level=logging.DEBUG,
-    format=(
-        '%(asctime)s %(name)s %(filename)s:%(lineno)s '
-        '%(levelname)s: %(message)s'
-    ),
-)
+logger = logging.getLogger(__name__)
+
+# logging.basicConfig(
+#     filename='/var/log/gitlab2jenkins/gitlab2jenkins.log',
+#     level=logging.DEBUG,
+#     format=(
+#         '%(asctime)s %(name)s %(filename)s:%(lineno)s '
+#         '%(levelname)s: %(message)s'
+#     ),
+# )
 
 # This script connects Gitlab with Jenkins and automatically creates new
 # Jenkins jobs from templates for new branches (currently only release
-# branches, sprint branches and master).
-# See
+# branches, sprint branches and master). See
 # https://redmine/projects/alf/wiki/Continuous_Integration#Automated-Branch-Setup
 
-JENKINS_URL = 'http://jenkins.lan.adytonsystems.com:8080'
+# JENKINS_URL = 'http://jenkins.lan.adytonsystems.com:8080'
+JENKINS_URL = 'http://localhost'
 JENKINS_USER = 'jenkins.ci'
 JENKINS_APITOKEN = 'b694f516b0d351ed8b1d72c8258d3aca'
 JENKINS_DESCTEMPLATE = '''
@@ -152,13 +154,15 @@ def gen_config(jobname, template, repo, branch, data):
     return etree.tostring(xml, pretty_print=True)
 
 
-def handler(req):
+def handler(data, start_response):  # req):
     ''' The actual request handler. '''
     global j
-    req.content_type = 'text/plain'
+    # req.content_type = 'text/plain'
+    start_response('200 OK', [('Content-Type', 'text/html')])
     # see https://gitlab/help/web_hooks
-    requestdata = req.read()
-    logging.debug('request data is %s\n', requestdata)
+    requestdata = data  # req.read()
+    output = []
+    logger.debug('request data is %s\n', requestdata)
     data = json.loads(requestdata)
     r = repo(data)
     b = branch(data)
@@ -166,27 +170,32 @@ def handler(req):
     # all_jobs = j.get_jobs()
     # all_views = j.views
 
-    if not re.match(r'^r[0-9\.]+(|-s.+)$', b) and not b.startswith('release-'):
-        req.write(
+    if (
+        not re.match(r'^r[0-9\.]+(|-s.+)$', b) and
+        not b.startswith('release-') and
+        not b == 'master'
+    ):
+        output.append(
             'branch is neither release, sprint nor story branch. Ignoring.'
         )
-        logging.info(
+        logger.info(
             'Branch in neither release, sprint nor story branch %s in repo %s.'
             ' Ignoring.\n' % (b, r)
         )
-        return apache.OK
+        return output
 
     kinds = ['ci']
     if re.match(r'^r[0-9\.]+(|-s[0-9_]+)$', b):
         kinds.append('nightly')
 
-    logging.info("Handling incoming data: %r\n" % data)
-    logging.info("Extracted: repo %s, branch %s\n" % (r, b))
+    logger.info("Handling incoming data: %r\n" % data)
+    logger.info("Extracted: repo %s, branch %s\n" % (r, b))
+
     # We have two kinds of jobs, ci (continuous integration) and nightly.
     for kind in kinds:
         tn = template_name(kind, data)
         jn = job_name(kind, data)
-        logging.info("Will work with template %s, job %s\n" % (tn, jn))
+        logger.info("Will work with template %s, job %s\n" % (tn, jn))
 
         if not j.has_job(tn):
             # If we don't have a template, there is nothing we can do anyways
@@ -194,29 +203,29 @@ def handler(req):
 
         if False and branch_created(data):
             res = "Registered new branch %s in repo %s\n" % (b, r)
-            logging.info(res)
+            logger.info(res)
             job = create_job(jn, tn, r, b, data)
             if kind != 'nightly':
-                logging.info('Will invoke this %s job directly.', kind)
+                logger.info('Will invoke this %s job directly.', kind)
                 job.invoke()
 
         elif branch_deleted(data):
             res = "Registered deleted branch %s in repo %s\n" % (b, r)
-            logging.info(res)
+            logger.info(res)
             if j.has_job(jn):
                 j.delete_job(jn)
         else:  # Just a regular commit on an existing branch.
             res = "Registered commit to %s on branch %s\n" % (r, b)
-            logging.info(res)
+            logger.info(res)
             if not j.has_job(jn):
                 job = create_job(jn, tn, r, b, data)
             else:
                 job = j.get_job(jn)
                 job.update_config(gen_config(jn, tn, r, b, data))
             if kind != 'nightly':
-                logging.info('Will invoke this %s job.', kind)
+                logger.info('Will invoke this %s job.', kind)
                 job.invoke()
 
-        req.write(res)
+        output.append(res)
 
-    return apache.OK
+    return output

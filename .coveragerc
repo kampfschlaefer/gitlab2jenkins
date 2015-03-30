@@ -1,0 +1,13 @@
+[run]
+branch = true
+source =
+	gitlabtojenkins
+	tests
+exclude_lines =
+    pragma: no cover
+    raise NotImplementedError
+## needs coverage>=4.0a1 to work.
+concurrency = gevent
+
+[html]
+directory = covhtml

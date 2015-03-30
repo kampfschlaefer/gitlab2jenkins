@@ -1,0 +1,7 @@
+pytest==2.7.0
+pytest-xdist==1.11
+pytest-localserver==0.3.4
+pytest-cov==1.8.1
+pytest-capturelog==0.7
+pytest-httpretty==0.2.0
+requests==2.6.0

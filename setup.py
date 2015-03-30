@@ -15,7 +15,8 @@ class PyTest(TestCommand):
         self.pytest_args = [
             '-v',
             '--cov', 'gitlabtojenkins',
-            '--cov-report', 'html', '--cov-report', 'xml'
+            '--cov-report', 'html', '--cov-report', 'xml',
+            'tests'
         ]
 
     def finalize_options(self):
@@ -40,15 +41,16 @@ setup(
     cmdclass={
         'test': PyTest,
     },
+    entry_points={
+        'console_scripts': [
+            'gitlab2jenkins_server = gitlabtojenkins.server:run'
+        ]
+    },
     setup_requires=['setuptools>=7.0'],
-    tests_require=[
-        'pytest==2.7.0',
-        'pytest-localserver==0.3.4',
-        'pytest-cov==1.8.1'
-    ],
+    tests_require=open('requirements-test.txt', 'r').read(),
     install_requires=[
+        'gevent==1.0',
         'jenkinsapi==0.2.26',
-        'lxml==3.4.2',
-        #  'gevent',
+        'lxml==2.3.2',
     ]
 )
