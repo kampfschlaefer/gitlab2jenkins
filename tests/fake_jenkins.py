@@ -58,6 +58,8 @@ jobs = {
     },
 }
 
+last_triggered_job = None
+
 
 def server_url(env, path=''):
     return '%s://%s:%s%s' % (
@@ -117,11 +119,11 @@ def post_new_job(env, start_response):
                 name = v
     datalength = int(env.get('CONTENT_LENGTH', 0))
     data = env['wsgi.input'].read(datalength)
-    logger.info('Posted data "%s"', data)
+    # logger.info('Posted data "%s"', data)
     newjob = copy.deepcopy(job_template)
     newjob['name'] = name
     newjob['url'] = server_url(env, '/job/%s/' % name)
-    logger.info('newjob = %s', pprint.pformat(newjob, indent=4))
+    # logger.info('newjob = %s', pprint.pformat(newjob, indent=4))
     if name:
         jobs[name] = {
             'color': 'blue',
@@ -130,6 +132,64 @@ def post_new_job(env, start_response):
         }
     logger.info('Creating job with name \'%s\'', name)
     return []
+
+
+def post_build_job(env, start_response):
+    job = re.findall('/job/([^/]+)/build', env['PATH_INFO'])[0]
+    logger.info('Build job "%s"!', job)
+    start_response(
+        '201 Created', [
+            ('Location', server_url(env, '/queue/item/1/'))
+        ]
+    )
+    last_triggered_job = job
+    return []
+
+
+def get_queue_details(env, start_response):
+    build_id = int(
+        re.findall('/queue/item/(\d+)/api/python', env['PATH_INFO'])[0]
+    )
+    ret = """
+{
+    "actions":[
+        {
+            "causes":[
+                {
+                    "shortDescription":"Started by user Arnold Krille",
+                    "userId":"arnold.krille",
+                    "userName":"Arnold Krille"
+                }
+            ]
+        },
+        {}
+    ],
+    "blocked":False,
+    "buildable":False,
+    "id":%(build_id)s,
+    "inQueueSince":1427790412785,
+    "params":"",
+    "stuck":False,
+    "task":{
+        "name":"%(job)s",
+        "url":"%(server)s/job/%(job)s/",
+        "color":"blue"
+    },
+    "url":"queue/item/5/",
+    "why":None,
+    "cancelled":False,
+    "executable":{
+        "number":12,
+        "url":"%(server)s/job/%(job)s/"
+    }
+}""" % {
+        'job': last_triggered_job,
+        'build_id': build_id,
+        'server': server_url(env),
+    }
+
+    start_response("200 OK", [])
+    return [ret]
 
 
 def default_handler(env, start_response):
@@ -146,7 +206,8 @@ handlers = {
     ('/createItem', 'POST'): post_new_job,
     (r'/job/[^/]+/api/python', 'GET'): get_job,
     ('/job/template-ci-diaspora/config.xml', 'GET'): get_diaspora_config_xml,
-    # ('/api/python', 'POST'): default_handler,
+    (r'/job/[^/]+/build', 'POST'): post_build_job,
+    (r'/queue/item/[\d]+/api/python', 'GET'): get_queue_details,
 }
 
 
@@ -165,5 +226,5 @@ def jenkins_app(env, start_response):
             break
     logger.debug('handler = %s', handler)
     ret = handler(env, start_response)
-    logger.debug('Will answer with %s', ret)
+    # logger.debug('Will answer with %s', ret)
     return ret

@@ -46,4 +46,4 @@ def test_post_example_push_event(testserver, fake_jenkins, example_push):
     gitlabtojenkins.handler.JENKINS_URL = fake_jenkins.url
     r = requests.post(testserver.url, example_push)
     assert r.status_code == 200
-    assert 0, r.text
+    assert r.text == ''

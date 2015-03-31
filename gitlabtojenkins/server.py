@@ -1,14 +1,13 @@
 
 from gevent.pywsgi import WSGIServer
+import logging
 
 from .handler import handler
 
 
 def application(env, start_response):
     if env['PATH_INFO'] == '/':
-        # print env
         if env['REQUEST_METHOD'] == 'POST':
-            # start_response('200 OK', [])
             length = int(env.get('CONTENT_LENGTH', 0))
             return handler(env['wsgi.input'].read(length), start_response)
         else:
@@ -26,6 +25,6 @@ def application(env, start_response):
 
 
 def run():
-    print('running wsgi-server on port 8080')
+    logging.info('running wsgi-server on port 8080')
     WSGIServer(('', 8080), application).serve_forever()
-    print('done.')
+    logging.info('done.')
