@@ -167,7 +167,7 @@ def get_queue_details(env, start_response):
     "blocked":False,
     "buildable":False,
     "id":%(build_id)s,
-    "inQueueSince":1427790412785,
+    "inQueueSince":14277904127%(build_id)02i,
     "params":"",
     "stuck":False,
     "task":{
