@@ -1,7 +1,6 @@
 
 import pprint
 import re
-import json
 import copy
 
 import logging
@@ -135,6 +134,7 @@ def post_new_job(env, start_response):
 
 
 def post_build_job(env, start_response):
+    global last_triggered_job
     job = re.findall('/job/([^/]+)/build', env['PATH_INFO'])[0]
     logger.info('Build job "%s"!', job)
     start_response(
