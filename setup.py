@@ -46,10 +46,14 @@ setup(
             'gitlab2jenkins_server = gitlabtojenkins.server:run'
         ]
     },
+    dependency_links=[
+        'git+https://github.com/kampfschlaefer/jenkins_api_simulator#egg=jenkins_api_simulator',
+        # 'git+file:../jenkins_api_simulator#egg=jenkins_api_simulator'
+    ],
     setup_requires=['setuptools>=7.0'],
     tests_require=open('requirements-test.txt', 'r').read(),
     install_requires=[
-        'gevent==1.0',
+        'gevent>=1.0',
         'jenkinsapi==0.2.26',
         'lxml==2.3.2',
     ]

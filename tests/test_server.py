@@ -5,7 +5,7 @@ import requests
 
 import gitlabtojenkins.handler
 
-from .fake_jenkins import jenkins_app
+from jenkins_api_simulator.statefull import app as jenkins_app
 from gitlabtojenkins.server import application
 
 
