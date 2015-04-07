@@ -53,12 +53,13 @@ def branch(data):
     ref = data['ref']
     if ref.startswith('refs/heads/'):
         return ref[11:]
-    # I have no idea if this can happen. Maybe raise an exception?
-    logging.error('branch(%s) this should be reached...', ref)
-    return ref
+    else:  # pragma: no cover
+        # I have no idea if this can happen. Maybe raise an exception?
+        logging.error('branch(%s) this should not be reached...', ref)
+        return ref
 
 
-def branch_created(data):
+def branch_created(data):  # pragma: no cover
     ''' Determine from JSON data if a new branch was created. '''
     return int(data['before'], base=16) == 0
 
@@ -116,7 +117,7 @@ def view_for_job(job):
     ''' Determine the view that the given job is in. '''
     # logging.debug('all views: %s', ', '.join(j.views))
     return None
-    for vname in j.views:
+    for vname in j.views:  # pragma: no cover
         if vname in ['All', 'Alle']:
             continue
         view = j.views[vname]
@@ -155,13 +156,12 @@ def gen_config(jobname, template, repo, branch, data):
     return etree.tostring(xml, pretty_print=True)
 
 
-def handler(data, start_response):  # req):
+def handler(data, start_response):
     ''' The actual request handler. '''
     global j
-    # req.content_type = 'text/plain'
     start_response('200 OK', [('Content-Type', 'text/html')])
     # see https://gitlab/help/web_hooks
-    requestdata = data  # req.read()
+    requestdata = data
     output = []
     logger.debug('request data is %s\n', requestdata)
     data = json.loads(requestdata)
@@ -202,7 +202,7 @@ def handler(data, start_response):  # req):
             # If we don't have a template, there is nothing we can do anyways
             continue
 
-        if False and branch_created(data):
+        if False and branch_created(data):  # pragma: no cover
             res = "Registered new branch %s in repo %s\n" % (b, r)
             logger.info(res)
             job = create_job(jn, tn, r, b, data)

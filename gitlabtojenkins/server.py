@@ -24,7 +24,7 @@ def application(env, start_response):
         ]
 
 
-def run():
+def run():  # pragma: no cover
     logging.info('running wsgi-server on port 8080')
     WSGIServer(('', 8080), application).serve_forever()
     logging.info('done.')

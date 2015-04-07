@@ -47,8 +47,8 @@ setup(
         ]
     },
     dependency_links=[
-        'git+https://github.com/kampfschlaefer/jenkins_api_simulator#egg=jenkins_api_simulator',
-        # 'git+file:../jenkins_api_simulator#egg=jenkins_api_simulator'
+        'https://github.com/kampfschlaefer/jenkins_api_simulator' +
+        '/tarball/master#egg=jenkins_api_simulator-0.1',
     ],
     setup_requires=['setuptools>=7.0'],
     tests_require=open('requirements-test.txt', 'r').read(),
