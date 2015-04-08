@@ -1,12 +1,8 @@
-# from mod_python import apache
-# from mod_python import util
 
 from lxml import etree
 
 from jenkinsapi import jenkins
 import json
-# import time
-# import urllib
 import re
 
 import logging
@@ -14,10 +10,8 @@ logger = logging.getLogger(__name__)
 
 # This script connects Gitlab with Jenkins and automatically creates new
 # Jenkins jobs from templates for new branches (currently only release
-# branches, sprint branches and master). See
-# https://redmine/projects/alf/wiki/Continuous_Integration#Automated-Branch-Setup
+# branches, sprint branches and master).
 
-# JENKINS_URL = 'http://jenkins.lan.adytonsystems.com:8080'
 JENKINS_URL = 'http://localhost'
 JENKINS_USER = 'mr.jenkins'
 JENKINS_APITOKEN = ''
