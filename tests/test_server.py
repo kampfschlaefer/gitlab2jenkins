@@ -1,5 +1,4 @@
 
-# import os
 from gevent import monkey
 monkey.patch_all()
 
@@ -8,6 +7,7 @@ import tempfile
 import pytest
 import requests
 import gevent
+import random
 
 import gitlabtojenkins.handler
 
@@ -110,18 +110,46 @@ def test_example_push_ci_template(tmpdir, testserver, fake_jenkins, example_push
 
 class TestStandaloneApplication(object):
     def test_run_with_defaults(self, tmpdir, fake_jenkins, example_push):
-        tmpdir.chdir()
         configfile = tmpdir.join('.gitlab2jenkins.conf')
         with configfile.open('w') as f:
             f.write('[gitlab2jenkins]\njenkins_url = %s\n' % fake_jenkins.url)
+        olddir = tmpdir.chdir()
         g = gevent.Greenlet(run)
         g.start()
-        gevent.sleep(1.5)
-        r = requests.post('http://localhost:8080/', example_push)
+        olddir.chdir()
+        gevent.sleep(0.1)
+        r = requests.get('http://localhost:8080/')
         assert r.status_code == 200
-        assert r.text == ''
 
-        gevent.sleep(0.5)
+        gevent.sleep(0.1)
+        g.kill()
+        g.join()
+
+        assert g.exception is None
+
+    def test_run_on_localhost_custom_port(self, tmpdir, fake_jenkins, example_push):
+        custom_port = random.randint(8000, 9000)
+        configfile = tmpdir.join('.gitlab2jenkins.conf')
+        with configfile.open('w') as f:
+            f.write(
+                '[gitlab2jenkins]\njenkins_url = %s\n'
+                'listen = 127.0.0.1\nport = %s\n' % (
+                    fake_jenkins.url,
+                    custom_port
+                )
+            )
+        olddir = tmpdir.chdir()
+        g = gevent.Greenlet(run)
+        g.start()
+        olddir.chdir()
+        gevent.sleep(0.1)
+        r = requests.get('http://localhost:%s/' % custom_port)
+        assert r.status_code == 200
+
+        # TODO: check connection to correct port but public ip
+        # TODO: check for connection on localhost but wrong port 8080
+
+        gevent.sleep(0.1)
         g.kill()
         g.join()
 
