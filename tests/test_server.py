@@ -37,7 +37,9 @@ def example_push():
     return open('tests/example_data/push_event.json').read()
 
 
-def prepare_config(tmpdir, jenkins_url, jenkins_user=None, jenkins_apitoken=None):
+def prepare_config(
+    tmpdir, jenkins_url, jenkins_user=None, jenkins_apitoken=None
+):
     f = tempfile.NamedTemporaryFile(dir=str(tmpdir))
     f.file.write('[gitlab2jenkins]\njenkins_url = %s\n' % jenkins_url)
     if jenkins_user:
@@ -78,7 +80,9 @@ def test_parse_config_not_existing():
     assert gitlabtojenkins.handler.JENKINS_URL == 'http://localhost'
 
 
-def test_example_push_no_templates(tmpdir, testserver, fake_jenkins, example_push):
+def test_example_push_no_templates(
+    tmpdir, testserver, fake_jenkins, example_push
+):
     configfile = prepare_config(tmpdir, jenkins_url=fake_jenkins.url)
     parse_config([configfile.name])
     r = requests.post(testserver.url, example_push)
@@ -89,7 +93,9 @@ def test_example_push_no_templates(tmpdir, testserver, fake_jenkins, example_pus
     assert not j.keys()
 
 
-def test_example_push_ci_template(tmpdir, testserver, fake_jenkins, example_push):
+def test_example_push_ci_template(
+    tmpdir, testserver, fake_jenkins, example_push
+):
     j = jenkins.Jenkins(fake_jenkins.url)
     j.create_job(
         'template-ci-diaspora',
@@ -127,7 +133,9 @@ class TestStandaloneApplication(object):
 
         assert g.exception is None
 
-    def test_run_on_localhost_custom_port(self, tmpdir, fake_jenkins, example_push):
+    def test_run_on_localhost_custom_port(
+        self, tmpdir, fake_jenkins, example_push
+    ):
         custom_port = random.randint(8000, 9000)
         configfile = tmpdir.join('.gitlab2jenkins.conf')
         with configfile.open('w') as f:
