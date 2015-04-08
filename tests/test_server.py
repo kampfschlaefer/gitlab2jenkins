@@ -1,14 +1,19 @@
 
+# import os
+from gevent import monkey
+monkey.patch_all()
+
 from pytest_localserver.http import WSGIServer
 import tempfile
 import pytest
 import requests
+import gevent
 
 import gitlabtojenkins.handler
 
 from jenkins_api_simulator.statefull import app as jenkins_app
 from jenkinsapi import jenkins
-from gitlabtojenkins.server import application, parse_config
+from gitlabtojenkins.server import application, parse_config, run
 
 
 @pytest.yield_fixture
@@ -21,10 +26,10 @@ def testserver():
 
 @pytest.yield_fixture
 def fake_jenkins():
-    jenkins = WSGIServer(application=jenkins_app)
-    jenkins.start()
-    yield jenkins
-    jenkins.stop()
+    jenkins_server = WSGIServer(application=jenkins_app)
+    jenkins_server.start()
+    yield jenkins_server
+    jenkins_server.stop()
 
 
 @pytest.fixture
@@ -101,3 +106,23 @@ def test_example_push_ci_template(tmpdir, testserver, fake_jenkins, example_push
     jobs = j.keys()
     assert 'template-ci-diaspora' in jobs
     assert 'ci-diaspora-master' in jobs
+
+
+class TestStandaloneApplication(object):
+    def test_run_with_defaults(self, tmpdir, fake_jenkins, example_push):
+        tmpdir.chdir()
+        configfile = tmpdir.join('.gitlab2jenkins.conf')
+        with configfile.open('w') as f:
+            f.write('[gitlab2jenkins]\njenkins_url = %s\n' % fake_jenkins.url)
+        g = gevent.Greenlet(run)
+        g.start()
+        gevent.sleep(1.5)
+        r = requests.post('http://localhost:8080/', example_push)
+        assert r.status_code == 200
+        assert r.text == ''
+
+        gevent.sleep(0.5)
+        g.kill()
+        g.join()
+
+        assert g.exception is None

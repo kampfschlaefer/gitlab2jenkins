@@ -1,5 +1,8 @@
 
 from gevent.pywsgi import WSGIServer
+from gevent import monkey
+monkey.patch_all()
+
 import ConfigParser
 import os.path
 
@@ -43,7 +46,7 @@ def application(env, start_response):
         ]
 
 
-def run():  # pragma: no cover
+def run():
     logger.info(
         'Reading config from (in order):\n'
         '  /etc/gitlab2jenkins.conf\n'
