@@ -4,6 +4,8 @@
 /coverage.xml
 /unittests.xml
 /build
+/dist
+/wheelhouse
 /covhtml
 *.pyc
 __pycache__
