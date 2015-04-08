@@ -12,15 +12,6 @@ import re
 import logging
 logger = logging.getLogger(__name__)
 
-# logging.basicConfig(
-#     filename='/var/log/gitlab2jenkins/gitlab2jenkins.log',
-#     level=logging.DEBUG,
-#     format=(
-#         '%(asctime)s %(name)s %(filename)s:%(lineno)s '
-#         '%(levelname)s: %(message)s'
-#     ),
-# )
-
 # This script connects Gitlab with Jenkins and automatically creates new
 # Jenkins jobs from templates for new branches (currently only release
 # branches, sprint branches and master). See
@@ -28,16 +19,16 @@ logger = logging.getLogger(__name__)
 
 # JENKINS_URL = 'http://jenkins.lan.adytonsystems.com:8080'
 JENKINS_URL = 'http://localhost'
-JENKINS_USER = 'jenkins.ci'
-JENKINS_APITOKEN = 'b694f516b0d351ed8b1d72c8258d3aca'
+JENKINS_USER = 'mr.jenkins'
+JENKINS_APITOKEN = ''
 JENKINS_DESCTEMPLATE = '''
-Automatically created job for branch <i>%(branch)s</i> of project
-<a href="%(uri)s">%(repo)s</a>. Cloned from template
-<a href="/job/%(template)s">%(template)s</a>.
+Automatically created job for branch <i>%(branch)s</i>\n
+of project <a href="%(uri)s">%(repo)s</a>.\n
+Cloned from template <a href="/job/%(template)s">%(template)s</a>.
 
 <strong>Do not edit this job!</strong>\nInstead,
-<a href="/job/%(template)s/configure">edit the template job</a>. Changes to the
-template will be propagated to all cloned jobs.
+<a href="/job/%(template)s/configure">edit the template job</a>.\n
+Changes to the template will be propagated to all cloned jobs.
 '''
 
 j = None
@@ -128,10 +119,10 @@ def view_for_job(job):
     return None
 
 
-def refresh():
+def refresh(jenkins_url, user, apitoken):
     ''' Reconnect to Jenkins, needed after creating new jobs. '''
     global j
-    j = jenkins.Jenkins(JENKINS_URL, JENKINS_USER, JENKINS_APITOKEN)
+    j = jenkins.Jenkins(jenkins_url, user, apitoken)
 
 
 def create_job(jobname, template, repo, branch, data):
@@ -139,7 +130,7 @@ def create_job(jobname, template, repo, branch, data):
     global j
     cfg = gen_config(jobname, template, repo, branch, data)
     newjob = j.create_job(jobname, cfg)
-    refresh()
+    refresh(JENKINS_URL, JENKINS_USER, JENKINS_APITOKEN)
     v = view_for_job(template)
     if v:
         v.add_job(jobname, newjob)
@@ -167,7 +158,7 @@ def handler(data, start_response):
     data = json.loads(requestdata)
     r = repo(data)
     b = branch(data)
-    refresh()
+    refresh(JENKINS_URL, JENKINS_USER, JENKINS_APITOKEN)
     # all_jobs = j.get_jobs()
     # all_views = j.views
 

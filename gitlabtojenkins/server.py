@@ -1,15 +1,34 @@
 
 from gevent.pywsgi import WSGIServer
-import logging
+import ConfigParser
+import os.path
 
-from .handler import handler
+from gitlabtojenkins import handler
+
+import logging
+logger = logging.getLogger(__name__)
+
+
+def parse_config(filenames):
+    config = ConfigParser.SafeConfigParser()
+    config.add_section('gitlab2jenkins')
+    config.set('gitlab2jenkins', 'jenkins_url', 'http://localhost')
+    config.set('gitlab2jenkins', 'jenkins_user', 'mr.jenkins')
+    config.set('gitlab2jenkins', 'jenkins_apitoken', 'notset')
+    config.read(filenames)
+    handler.JENKINS_URL = config.get('gitlab2jenkins', 'jenkins_url')
+    handler.JENKINS_USER = config.get('gitlab2jenkins', 'jenkins_user')
+    handler.JENKINS_APITOKEN = config.get('gitlab2jenkins', 'jenkins_apitoken')
 
 
 def application(env, start_response):
     if env['PATH_INFO'] == '/':
         if env['REQUEST_METHOD'] == 'POST':
             length = int(env.get('CONTENT_LENGTH', 0))
-            return handler(env['wsgi.input'].read(length), start_response)
+            return handler.handler(
+                env['wsgi.input'].read(length),
+                start_response
+            )
         else:
             start_response('200 OK', [('Content-Type', 'text/html')])
             return [
@@ -25,6 +44,19 @@ def application(env, start_response):
 
 
 def run():  # pragma: no cover
-    logging.info('running wsgi-server on port 8080')
+    logger.info(
+        'Reading config from (in order):\n'
+        '  /etc/gitlab2jenkins.conf\n'
+        '  ~/.gitlab2jenkins.conf\n'
+        '  .gitlab2jenkins.conf'
+    )
+    parse_config(
+        [
+            '/etc/gitlab2jenkins.conf',
+            os.path.expanduser('~/.gitlab2jenkins.conf'),
+            '.gitlab2jenkins.conf'
+        ]
+    )
+    logger.info('running wsgi-server on port 8080')
     WSGIServer(('', 8080), application).serve_forever()
-    logging.info('done.')
+    logger.info('done.')
