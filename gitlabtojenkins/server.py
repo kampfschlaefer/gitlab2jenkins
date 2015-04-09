@@ -5,6 +5,7 @@ monkey.patch_all()
 
 import ConfigParser
 import os.path
+import os
 
 from gitlabtojenkins import handler
 
@@ -18,10 +19,13 @@ def parse_config(filenames):
     config.set('gitlab2jenkins', 'jenkins_url', 'http://localhost')
     config.set('gitlab2jenkins', 'jenkins_user', 'mr.jenkins')
     config.set('gitlab2jenkins', 'jenkins_apitoken', 'notset')
-    config.read(filenames)
+    config.set('gitlab2jenkins', 'listen', '0.0.0.0')
+    config.set('gitlab2jenkins', 'port', '8080')
+    logger.info('parsed configs from %s', config.read(filenames))
     handler.JENKINS_URL = config.get('gitlab2jenkins', 'jenkins_url')
     handler.JENKINS_USER = config.get('gitlab2jenkins', 'jenkins_user')
     handler.JENKINS_APITOKEN = config.get('gitlab2jenkins', 'jenkins_apitoken')
+    return config
 
 
 def application(env, start_response):
@@ -53,13 +57,23 @@ def run():
         '  ~/.gitlab2jenkins.conf\n'
         '  .gitlab2jenkins.conf'
     )
-    parse_config(
+    config = parse_config(
         [
             '/etc/gitlab2jenkins.conf',
             os.path.expanduser('~/.gitlab2jenkins.conf'),
             '.gitlab2jenkins.conf'
         ]
     )
-    logger.info('running wsgi-server on port 8080')
-    WSGIServer(('', 8080), application).serve_forever()
+    logger.info(
+        'running wsgi-server on port %s',
+        config.getint('gitlab2jenkins', 'port')
+    )
+    logger.info(' CWD is %s', os.getcwd())
+    WSGIServer(
+        (
+            config.get('gitlab2jenkins', 'listen'),
+            config.getint('gitlab2jenkins', 'port')
+        ),
+        application
+    ).serve_forever()
     logger.info('done.')
