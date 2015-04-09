@@ -30,6 +30,8 @@ The configuration is read from `/etc/gitlab2jenkins.conf`, `~/.gitlab2jenkins.co
 jenkins_url = http://localhost:8080
 jenkins_user = mr.jenkins
 jenkins_apitoken = jenkinssecretapitoken
+listen = 0.0.0.0
+port = 8080
 ```
 
 ## How to run?
