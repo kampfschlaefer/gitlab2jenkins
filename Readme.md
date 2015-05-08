@@ -1,5 +1,7 @@
 # gitlab2jenkins
 
+[![Build Status](https://travis-ci.org/GateprotectGmbH/gitlab2jenkins.svg?branch=master-s13_14-46227)](https://travis-ci.org/GateprotectGmbH/gitlab2jenkins)
+
 This is the new webhook to connect gitlab with jenkins the way we want it.
 
 ## What does it do?
