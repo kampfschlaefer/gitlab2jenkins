@@ -54,7 +54,11 @@ setup(
     tests_require=open('requirements-test.txt', 'r').read(),
     install_requires=[
         'gevent>=1.0',
-        'jenkinsapi==0.2.26',
-        'lxml==2.3.2',
+        'jenkinsapi>=0.2.26',
+        'lxml>=2.3.0',
+        'pyopenssl>=0.15.0',
+        'ndg-httpsclient>=0.4.0',
+        'pyasn1>=0.1.7',
+        'urllib3>=1.0.0',
     ]
 )
