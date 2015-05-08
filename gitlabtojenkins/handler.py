@@ -1,11 +1,12 @@
 
 from lxml import etree
-# from gevent import monkey
-# monkey.patch_all()
-
 from jenkinsapi import jenkins
+from jenkinsapi.utils.requester import Requester
 import json
 import re
+
+import urllib3.contrib.pyopenssl
+urllib3.contrib.pyopenssl.inject_into_urllib3()
 
 import logging
 logger = logging.getLogger(__name__)
@@ -103,6 +104,7 @@ def set_enabled(xml):
 def view_for_job(job):
     ''' Determine the view that the given job is in. '''
     # logging.debug('all views: %s', ', '.join(j.views))
+    # skip views for now
     return None
     for vname in j.views:  # pragma: no cover
         if vname in ['All', 'Alle']:
@@ -115,18 +117,25 @@ def view_for_job(job):
     return None
 
 
-def refresh(jenkins_url, user, apitoken):
+def refresh(jenkins_url, user, apitoken, ssl_verify=True):
     ''' Reconnect to Jenkins, needed after creating new jobs. '''
     global j
-    j = jenkins.Jenkins(jenkins_url, user, apitoken)
+    requester = Requester(
+        username=user, password=apitoken,
+        baseurl=jenkins_url, ssl_verify=ssl_verify
+    )
+    j = jenkins.Jenkins(jenkins_url, user, apitoken, requester=requester)
 
 
-def create_job(jobname, template, repo, branch, data):
+def create_job(jobname, template, repo, branch, data, options={}):
     ''' Create a new job. '''
     global j
     cfg = gen_config(jobname, template, repo, branch, data)
     newjob = j.create_job(jobname, cfg)
-    refresh(JENKINS_URL, JENKINS_USER, JENKINS_APITOKEN)
+    refresh(
+        JENKINS_URL, JENKINS_USER, JENKINS_APITOKEN,
+        ssl_verify=options.get('ssl_verify', True)
+    )
     v = view_for_job(template)
     if v:
         v.add_job(jobname, newjob)
@@ -143,18 +152,21 @@ def gen_config(jobname, template, repo, branch, data):
     return etree.tostring(xml, pretty_print=True)
 
 
-def handler(data, start_response):
+def handler(data, start_response, options={}):
     ''' The actual request handler. '''
     global j
     start_response('200 OK', [('Content-Type', 'text/html')])
     # see https://gitlab/help/web_hooks
     requestdata = data
-    output = []
     logger.debug('request data is %s\n', requestdata)
+    logger.warning('ssl_verify is %s', options.get('ssl_verify'))
     data = json.loads(requestdata)
     r = repo(data)
     b = branch(data)
-    refresh(JENKINS_URL, JENKINS_USER, JENKINS_APITOKEN)
+    refresh(
+        JENKINS_URL, JENKINS_USER, JENKINS_APITOKEN,
+        ssl_verify=options.get('ssl_verify', True)
+    )
     # all_jobs = j.get_jobs()
     # all_views = j.views
 
@@ -163,14 +175,11 @@ def handler(data, start_response):
         not b.startswith('release-') and
         not b == 'master'
     ):
-        output.append(
-            'branch is neither release, sprint nor story branch. Ignoring.'
-        )
         logger.info(
             'Branch in neither release, sprint nor story branch %s in repo %s.'
             ' Ignoring.\n' % (b, r)
         )
-        return output
+        return []
 
     kinds = ['ci']
     if re.match(r'^r[0-9\.]+(|-s[0-9_]+)$', b):
@@ -192,7 +201,7 @@ def handler(data, start_response):
         if False and branch_created(data):  # pragma: no cover
             res = "Registered new branch %s in repo %s\n" % (b, r)
             logger.info(res)
-            job = create_job(jn, tn, r, b, data)
+            job = create_job(jn, tn, r, b, data, options)
             if kind != 'nightly':
                 logger.info('Will invoke this %s job directly.', kind)
                 job.invoke()
@@ -206,7 +215,7 @@ def handler(data, start_response):
             res = "Registered commit to %s on branch %s\n" % (r, b)
             logger.info(res)
             if not j.has_job(jn):
-                job = create_job(jn, tn, r, b, data)
+                job = create_job(jn, tn, r, b, data, options)
             else:
                 job = j.get_job(jn)
                 job.update_config(gen_config(jn, tn, r, b, data))
@@ -214,6 +223,4 @@ def handler(data, start_response):
                 logger.info('Will invoke this %s job.', kind)
                 job.invoke()
 
-        output.append(res)
-
-    return output
+    return []

@@ -15,6 +15,7 @@ import gitlabtojenkins.handler
 
 from jenkins_api_simulator.statefull import app as jenkins_app
 from jenkinsapi import jenkins
+from jenkinsapi.utils.requester import Requester
 from gitlabtojenkins.server import application, parse_config, run
 
 
@@ -28,10 +29,23 @@ def testserver():
 
 @pytest.yield_fixture
 def fake_jenkins():
-    jenkins_server = WSGIServer(application=jenkins_app)
+    jenkins_server = WSGIServer(application=jenkins_app, ssl_context='adhoc')
     jenkins_server.start()
     yield jenkins_server
     jenkins_server.stop()
+
+
+@pytest.fixture
+def requester_factory(fake_jenkins):
+    url = fake_jenkins.url
+
+    def factory():
+        return Requester(
+            username=None, password=None,
+            baseurl=url, ssl_verify=False
+        )
+
+    return factory
 
 
 @pytest.fixture
@@ -43,7 +57,9 @@ def prepare_config(
     tmpdir, jenkins_url, jenkins_user=None, jenkins_apitoken=None
 ):
     f = tempfile.NamedTemporaryFile(dir=str(tmpdir))
-    f.file.write('[gitlab2jenkins]\njenkins_url = %s\n' % jenkins_url)
+    f.file.write('[gitlab2jenkins]\n')
+    f.file.write('ssl_verify = False\n')
+    f.file.write('jenkins_url = %s\n' % jenkins_url)
     if jenkins_user:
         f.file.write('jenkins_user = %s\n' % jenkins_user)
     if jenkins_apitoken:
@@ -83,7 +99,7 @@ def test_parse_config_not_existing():
 
 
 def test_example_push_no_templates(
-    tmpdir, testserver, fake_jenkins, example_push
+    tmpdir, testserver, fake_jenkins, requester_factory, example_push
 ):
     configfile = prepare_config(tmpdir, jenkins_url=fake_jenkins.url)
     parse_config([configfile.name])
@@ -91,14 +107,14 @@ def test_example_push_no_templates(
     assert r.status_code == 200
     assert r.text == ''
 
-    j = jenkins.Jenkins(fake_jenkins.url)
+    j = jenkins.Jenkins(fake_jenkins.url, requester=requester_factory())
     assert not j.keys()
 
 
 def test_example_push_ci_template(
-    tmpdir, testserver, fake_jenkins, example_push
+    tmpdir, testserver, fake_jenkins, requester_factory, example_push
 ):
-    j = jenkins.Jenkins(fake_jenkins.url)
+    j = jenkins.Jenkins(fake_jenkins.url, requester=requester_factory())
     j.create_job(
         'template-ci-diaspora',
         open('tests/example_data/get_diaspora_config.xml', 'r').read()
@@ -110,7 +126,7 @@ def test_example_push_ci_template(
     assert r.status_code == 200
     assert r.text == ''
 
-    j = jenkins.Jenkins(fake_jenkins.url)
+    j = jenkins.Jenkins(fake_jenkins.url, requester=requester_factory())
     jobs = j.keys()
     assert 'template-ci-diaspora' in jobs
     assert 'ci-diaspora-master' in jobs
