@@ -1,0 +1,6 @@
+description "Start a server listening for webhooks."
+author "Thomas Steinert <thomas.steinert@gateprotect.com>"
+start on runlevel [2345]
+stop on runlevel [016]
+exec /usr/local/bin/gitlab2jenkins_server
+respawn
