@@ -1,6 +1,10 @@
 language: python
 python:
   - 2.7
+  - 3.4
+matrix:
+  allow_failures:
+    - python: 3.4
 cache: pip
 install: "pip install -e ."
 script: "python setup.py test"
