@@ -41,7 +41,9 @@ port = 8080
 Run the installed executable `gitlab2jenkins_server`. This runs it own small wsgi server on http://0.0.0.0:8080 and listens for events from gitlab.
 Add it to your projects webhooks in gitlab with the url.
 
-The server should be run as daemon from some kind of init-system to start automatically and restart when needed. Also you can (should?) proxy this service with apache or nginx if you want to run it on a different port.
+The server should be run as daemon from some kind of init-system to start automatically and restart when needed. To use gitlab2jenkins_server with upstart copy the `init/gitlab2jenkins.conf.upstart` to `/etc/init/gitlab2jenkins.conf` and run `initctl reload-configuration`. After that you can run `start gitlab2jenkins` manually or reboot the system.
+
+Also you can (should?) proxy this service with apache or nginx if you want to run it on a different port.
 
 ## What more is to come?
 
