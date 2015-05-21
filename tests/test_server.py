@@ -29,7 +29,9 @@ def testserver():
 
 @pytest.yield_fixture
 def fake_jenkins():
-    jenkins_server = WSGIServer(application=jenkins_app, ssl_context='adhoc')
+    # FIXME Sadly gevent1.0.1 together with python 2.7.9+ have a problem with running ssl servers.
+    # jenkins_server = WSGIServer(application=jenkins_app, ssl_context='adhoc')
+    jenkins_server = WSGIServer(application=jenkins_app)
     jenkins_server.start()
     yield jenkins_server
     jenkins_server.stop()
