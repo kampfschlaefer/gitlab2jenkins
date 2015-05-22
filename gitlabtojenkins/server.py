@@ -60,19 +60,16 @@ def application(env, start_response):
 
 
 def run():
+    logging.basicConfig(level=logging.INFO)
+    config_paths = [
+        '/etc/gitlab2jenkins.conf',
+        os.path.expanduser('~/.gitlab2jenkins.conf'),
+        '.gitlab2jenkins.conf'
+    ]
     logger.info(
-        'Reading config from (in order):\n'
-        '  /etc/gitlab2jenkins.conf\n'
-        '  ~/.gitlab2jenkins.conf\n'
-        '  .gitlab2jenkins.conf'
+        'Reading config from (in order):\n%s' % '\n'.join(config_paths)
     )
-    config = parse_config(
-        [
-            '/etc/gitlab2jenkins.conf',
-            os.path.expanduser('~/.gitlab2jenkins.conf'),
-            '.gitlab2jenkins.conf'
-        ]
-    )
+    config = parse_config(config_paths)
     logger.info(
         'running wsgi-server on port %s',
         config.getint('gitlab2jenkins', 'port')
