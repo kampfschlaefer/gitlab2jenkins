@@ -173,6 +173,7 @@ def handler(data, start_response, options={}):
     if (
         not re.match(r'^r[0-9\.]+(|-s.+)$', b) and
         not b.startswith('release-') and
+        not b.startswith('master-') and
         not b == 'master'
     ):
         logger.info(
