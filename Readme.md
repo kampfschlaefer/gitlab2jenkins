@@ -22,7 +22,7 @@ So this is a small service to get one push-event as webhook from gitlab and tran
 
 From github tarball:
 ```shell
-$> pip install https://github.com/GateprotectGmbH/gitlab2jenkins/tarball/master-s13_14-46227#egg=gitlab2jenkins-0.1
+$> pip install https://github.com/GateprotectGmbH/gitlab2jenkins/tarball/master#egg=gitlab2jenkins-0.1
 ```
 
 The configuration is read from `/etc/gitlab2jenkins.conf`, `~/.gitlab2jenkins.conf` and `.gitlab2jenkins.conf`. The files are tried in that order, settings in the later overwrite the files before. The config looks like this:
